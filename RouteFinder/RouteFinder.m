@@ -8,6 +8,10 @@
 
 #import "RouteFinder.h"
 
+#define  nBUS               @"1"
+#define  nCOLECTOR          @"2"
+#define  nTUZOBUS           @"3"
+
 @interface RouteFinder ()
 
 @property (nonatomic,strong) NSMutableDictionary * routes;
@@ -142,8 +146,16 @@
                 [path addCoordinate:location.coordinate];
             }
             
-            GMSPolyline *rectangle = [GMSPolyline polylineWithPath:path];
-            rectangle.map = mapView;
+            GMSPolyline *polyline = [GMSPolyline polylineWithPath:path];
+            [polyline setStrokeWidth:4];
+            if([trajectory.type isEqualToString:nBUS]){
+                [polyline setStrokeColor:[UIColor colorWithRed:(51.0/255.0) green:(81.0/255.0) blue:(209.0/255.0) alpha:0.8]];
+            }else if([trajectory.type isEqualToString:nCOLECTOR]){
+                [polyline setStrokeColor:[UIColor colorWithRed:237.0/255.0 green:47.0/255.0 blue:75.0/255.0 alpha:0.8]];
+            }else if([trajectory.type isEqualToString:nTUZOBUS]){
+                [polyline setStrokeColor:[UIColor colorWithRed:168.0/255.0 green:214.0/255.0 blue:7.0/255.0 alpha:0.8]];
+            }
+            polyline.map = mapView;
         }
         
         
