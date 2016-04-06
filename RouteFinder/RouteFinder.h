@@ -20,13 +20,18 @@
 #define DEFAULT_INTERSECTION_TOLERANCE      100
 
 @interface RouteFinder : NSObject
+
 -(void)setSource:(CLLocation *)source;
+
 -(void)setDestination:(CLLocation *)destination;
+
 - (void)setAvailableRoutes:(NSMutableArray *)routesArray;
+
+- (NSMutableArray<Stop> *)getAvailableStops:(CLLocation *)location;
+
 - (NSArray<Result> *)searchRoutes;
+
 -(void)paintResult:(Result *)result onMap:(GMSMapView *)mapView;
 
 + (NSMutableArray *)decodePolyline:(NSString *)encodedString;
-
-
 @end

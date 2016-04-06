@@ -20,4 +20,7 @@
 @property (nonatomic, strong) Stop *source;
 @property (nonatomic, strong) Stop *destination;
 @property (nonatomic, strong) NSMutableArray *points;
+@property (nonatomic, strong) NSString *type;
+@property (nonatomic, assign) float min_rate;
+@property (nonatomic, assign) float max_rate;
 @end

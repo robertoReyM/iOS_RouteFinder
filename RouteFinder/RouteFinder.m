@@ -32,6 +32,63 @@
 }
 
 /******************************************************************************************************/
+- (NSMutableArray<Stop> *)getAvailableStops:(CLLocation *)location{
+    
+    NSMutableArray<Stop> *stops = [[NSMutableArray<Stop> alloc] init];
+    
+    for(int i = 0; i< self.routes.count;i++){
+        
+        BOOL isSourceCloseEnough = false;
+        float closestSourceDistance = 0;
+        Stop *closestSourceStop = nil;
+        
+        Route *currentRoute = [self.routes objectForKey:[NSString stringWithFormat:@"%d",i]];
+        
+        //iterate through stops
+        for (int i2= 0; i2<currentRoute.stops.count; i2++) {
+            
+            //get current point
+            Stop *stop = [currentRoute.stops objectAtIndex:i2];
+            CLLocation *point = stop.position;
+            
+            if(point!=nil){
+                //get distance to source
+                CLLocationDistance distanceToSource = [location distanceFromLocation:point];
+                
+                if(distanceToSource<DEFAULT_STOP_TOLERANCE){
+                    isSourceCloseEnough = true;
+                    
+                    //check if existing closest point
+                    if(closestSourceStop!=nil){
+                        
+                        //check if is closer than previous
+                        if(distanceToSource<closestSourceDistance){
+                            
+                            //assign new closest stop
+                            closestSourceStop = stop;
+                            closestSourceDistance = distanceToSource;
+                            
+                        }
+                    }else{
+                        
+                        //assign new closest point
+                        closestSourceStop = stop;
+                        closestSourceDistance = distanceToSource;
+                    }
+                }
+            }
+        }
+        
+        if(isSourceCloseEnough){
+            [closestSourceStop setRoute:currentRoute.name];
+            [closestSourceStop setType:currentRoute.route_type];
+            [stops addObject:closestSourceStop];
+        }
+    }
+    return stops;
+}
+
+/******************************************************************************************************/
 - (NSArray<Result> *)searchRoutes{
     
     //get available routes for source and destination points
@@ -73,6 +130,7 @@
     return nil;
 }
 
+/******************************************************************************************************/
 -(void)paintResult:(Result *)result onMap:(GMSMapView *)mapView{
     
     if(result!=nil && result.trajectories!=nil) {
@@ -91,6 +149,7 @@
         
     }
 }
+
 /*****************************************************************************************************
  PRIVATE METHODS
  *****************************************************************************************************/
@@ -103,24 +162,16 @@
         Route * route = [Route alloc];
         route.id = [NSString stringWithFormat:@"%d",i1];
         route.name = ((Route *)[routesArray objectAtIndex:i1]).name;
+        route.route_type = ((Route *)[routesArray objectAtIndex:i1]).route_type;
+        route.min_rate = ((Route *)[routesArray objectAtIndex:i1]).min_rate;
+        route.max_rate = ((Route *)[routesArray objectAtIndex:i1]).max_rate;
         route.polyline = ((Route *)[routesArray objectAtIndex:i1]).polyline;
         route.intersectedRoutes = [[NSMutableDictionary alloc] init];
         [routes setObject:route forKey:route.id];
         
         //get list of points
         route.points = [RouteFinder decodePolyline:route.polyline];
-        
-        //get stops from route
-        NSMutableArray<Stop> *stops1 = [[NSMutableArray<Stop> alloc] init];
-        int c1 = 0;
-        for (CLLocation *point in route.points) {
-            Stop *stop = [Stop alloc];
-            stop.position = point;
-            stop.name = [NSString stringWithFormat:@"Stop %d",c1];
-            [stops1 addObject:stop];
-            c1++;
-        }
-        route.stops = stops1;
+        route.stops = ((Route *)[routesArray objectAtIndex:i1]).stops;
         
         //iterate through points inside route
         for(int i2 = 0; i2<route.stops.count;i2++){
@@ -129,75 +180,68 @@
             Stop *stop1 = [route.stops objectAtIndex:i2];
             CLLocation * point1 = stop1.position;
             
-            //go through all other polylines and get possible intersections
-            for (int i3 = 0; i3<routesArray.count; i3++) {
+            if(point1!=nil){
                 
-                //Create new route intersection
-                RouteIntersection * routeIntersection = [RouteIntersection alloc];
-                routeIntersection.routeID = [NSString stringWithFormat:@"%d",i3];
-                routeIntersection.pointIntersections = [[NSMutableArray<PointIntersection> alloc] init];
-                
-                //as long is not the same route
-                if(i3!=i1){
+                //go through all other polylines and get possible intersections
+                for (int i3 = 0; i3<routesArray.count; i3++) {
                     
-                    //get list of points of route to compare with
-                    NSMutableArray *points2 = [RouteFinder decodePolyline:((Route *)[routesArray objectAtIndex:i3]).polyline];
+                    //Create new route intersection
+                    RouteIntersection * routeIntersection = [RouteIntersection alloc];
+                    routeIntersection.routeID = [NSString stringWithFormat:@"%d",i3];
+                    routeIntersection.pointIntersections = [[NSMutableArray<PointIntersection> alloc] init];
                     
-                    //get stops from route
-                    NSMutableArray<Stop> *stops2 = [[NSMutableArray<Stop> alloc] init];
-                    int c2 = 0;
-                    for(CLLocation *point in points2){
-                        Stop * stop = [Stop alloc];
-                        stop.position = point;
-                        stop.name = [NSString stringWithFormat:@"Stop %d",c2];
-                        [stops2 addObject:stop];
-                        c2++;
-                    }
-                    
-                    //iterate through points on route to compare
-                    for (int i4 = 0; i4<stops2.count; i4++) {
+                    //as long is not the same route
+                    if(i3!=i1){
                         
-                        //get current point
-                        Stop *stop2 = [stops2 objectAtIndex:i4];
-                        CLLocation *point2 = stop2.position;
+                        //get stops from route
+                        NSMutableArray<Stop> *stops2 = ((Route *)[routesArray objectAtIndex:i3]).stops;
                         
-                        //get distance to source
-                        CLLocationDistance distance = [point1 distanceFromLocation:point2];
+                        //iterate through points on route to compare
+                        for (int i4 = 0; i4<stops2.count; i4++) {
+                            
+                            //get current point
+                            Stop *stop2 = [stops2 objectAtIndex:i4];
+                            CLLocation *point2 = stop2.position;
+                            
+                            if(point2!=nil){
+                                //get distance to source
+                                CLLocationDistance distance = [point1 distanceFromLocation:point2];
+                                
+                                //check if is close enough
+                                if(distance<DEFAULT_INTERSECTION_TOLERANCE){
+                                    
+                                    PointIntersection *pointIntersection = [PointIntersection alloc];
+                                    
+                                    //Assign r1 information
+                                    pointIntersection.r1Stop = stop1;
+                                    pointIntersection.r1ID = [NSString stringWithFormat:@"%d",i1];
+                                    
+                                    //Assign r2 information
+                                    pointIntersection.r2Stop = stop2;
+                                    pointIntersection.r2ID = [NSString stringWithFormat:@"%d",i3];
+                                    
+                                    //add to route intersection
+                                    [routeIntersection.pointIntersections addObject:pointIntersection];
+                                }
+                            }
+                            
+                        }
                         
-                        //check if is close enough
-                        if(distance<DEFAULT_INTERSECTION_TOLERANCE){
+                        //check for a valid route intersection object
+                        if(routeIntersection.pointIntersections.count>0){
                             
-                            PointIntersection *pointIntersection = [PointIntersection alloc];
-                            
-                            //Assign r1 information
-                            pointIntersection.r1Stop = stop1;
-                            pointIntersection.r1ID = [NSString stringWithFormat:@"%d",i1];
-                            
-                            //Assign r2 information
-                            pointIntersection.r2Stop = stop2;
-                            pointIntersection.r2ID = [NSString stringWithFormat:@"%d",i3];
-                            
-                            NSLog(@"%@,%@ r2 stop: %f,%f",pointIntersection.r1ID,pointIntersection.r2ID,pointIntersection.r2Stop.position.coordinate.latitude,pointIntersection.r2Stop.position.coordinate.longitude);
-                            //add to route intersection
-                            [routeIntersection.pointIntersections addObject:pointIntersection];
+                            if([route.intersectedRoutes objectForKey:routeIntersection.routeID]!=nil){
+                                
+                                //add point intersections to current route intersection
+                                [((RouteIntersection *)[route.intersectedRoutes objectForKey:routeIntersection.routeID]).pointIntersections addObjectsFromArray:routeIntersection.pointIntersections];
+                            }else{
+                                
+                                //Add route intersection to route
+                                [route.intersectedRoutes setObject:routeIntersection forKey:routeIntersection.routeID];
+                            }
                         }
                         
                     }
-                    
-                    //check for a valid route intersection object
-                    if(routeIntersection.pointIntersections.count>0){
-                        
-                        if([route.intersectedRoutes objectForKey:routeIntersection.routeID]!=nil){
-                            
-                            //add point intersections to current route intersection
-                            [((RouteIntersection *)[route.intersectedRoutes objectForKey:routeIntersection.routeID]).pointIntersections addObjectsFromArray:routeIntersection.pointIntersections];
-                        }else{
-                            
-                            //Add route intersection to route
-                            [route.intersectedRoutes setObject:routeIntersection forKey:routeIntersection.routeID];
-                        }
-                    }
-                    
                 }
             }
         }
@@ -237,53 +281,56 @@
             Stop *stop = [currentRoute.stops objectAtIndex:i2];
             CLLocation *point = stop.position;
             
-            //get distance to source
-            CLLocationDistance distanceToSource = [source distanceFromLocation:point];
-            
-            if(distanceToSource<DEFAULT_STOP_TOLERANCE){
-                isSourceCloseEnough = true;
+            if (point!=nil) {
                 
-                //check if existing closest point
-                if(closestSourceStop!=nil){
+                //get distance to source
+                CLLocationDistance distanceToSource = [source distanceFromLocation:point];
+                
+                if(distanceToSource<DEFAULT_STOP_TOLERANCE){
+                    isSourceCloseEnough = true;
                     
-                    //check if is closer than previous
-                    if(distanceToSource<closestSourceDistance){
+                    //check if existing closest point
+                    if(closestSourceStop!=nil){
                         
-                        //assign new closest stop
+                        //check if is closer than previous
+                        if(distanceToSource<closestSourceDistance){
+                            
+                            //assign new closest stop
+                            closestSourceStop = stop;
+                            closestSourceDistance = distanceToSource;
+                            
+                        }
+                    }else{
+                        
+                        //assign new closest point
                         closestSourceStop = stop;
                         closestSourceDistance = distanceToSource;
-                        
                     }
-                }else{
-                    
-                    //assign new closest point
-                    closestSourceStop = stop;
-                    closestSourceDistance = distanceToSource;
                 }
-            }
-            
-            //get distance to destination
-            CLLocationDistance distanceToDestination = [destination distanceFromLocation:point];
-            
-            if(distanceToDestination<DEFAULT_STOP_TOLERANCE){
-                isDestinationCloseEnough = true;
                 
-                //check if existing closest point
-                if(closestDestinationStop!=nil){
+                //get distance to destination
+                CLLocationDistance distanceToDestination = [destination distanceFromLocation:point];
+                
+                if(distanceToDestination<DEFAULT_STOP_TOLERANCE){
+                    isDestinationCloseEnough = true;
                     
-                    //check if is closer than previous
-                    if(distanceToDestination<closestDestinationDistance){
+                    //check if existing closest point
+                    if(closestDestinationStop!=nil){
                         
-                        //assign new closest stop
+                        //check if is closer than previous
+                        if(distanceToDestination<closestDestinationDistance){
+                            
+                            //assign new closest stop
+                            closestDestinationStop = stop;
+                            closestDestinationDistance = distanceToDestination;
+                            
+                        }
+                    }else{
+                        
+                        //assign new closest point
                         closestDestinationStop = stop;
                         closestDestinationDistance = distanceToDestination;
-                        
                     }
-                }else{
-                    
-                    //assign new closest point
-                    closestDestinationStop = stop;
-                    closestDestinationDistance = distanceToDestination;
                 }
             }
         }
@@ -315,9 +362,6 @@
     CLLocation *previousPoint = nil;
     
     for(CLLocation *point in points){
-        
-        NSLog(@"point : %f,%f",point.coordinate.latitude,point.coordinate.longitude);
-        NSLog(@"s1 : %f,%f ",s1.position.coordinate.latitude,s1.position.coordinate.longitude);
         
          if(point.coordinate.latitude == s1.position.coordinate.latitude &&
             point.coordinate.longitude == s1.position.coordinate.longitude){
@@ -389,6 +433,9 @@
     
     Trajectory *trajectory = [Trajectory alloc];
     trajectory.name = route.name;
+    trajectory.type = route.route_type;
+    trajectory.min_rate = route.min_rate;
+    trajectory.max_rate = route.max_rate;
     trajectory.points = trajectoryPoints;
     trajectory.distance = totalDistance;
     trajectory.source = s1;
@@ -443,7 +490,6 @@
     
     return results;
 }
-
 
 /******************************************************************************************************/
 -(NSMutableDictionary *)checkSecondLevelForSource:(SearchPoint *)sourcePoint forDestination:(SearchPoint *)destinationPoint{

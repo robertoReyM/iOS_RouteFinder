@@ -72,14 +72,33 @@
     for (int i = 0; i<POLYLINES.count; i++) {
         Route *route = [Route alloc];
         route.polyline = [POLYLINES objectAtIndex:i];
-        route.name = [NSString stringWithFormat:@"%d",i];
+        route.name = [NSString stringWithFormat:@"Route %d",i];
+        route.route_type = [NSString stringWithFormat:@"%d",i%3+1];
+        
+        NSMutableArray *points = [RouteFinder decodePolyline:route.polyline];
+        NSMutableArray<Stop> *stops = [[NSMutableArray<Stop> alloc] init];
+        
+        int c1 = 0;
+        for (CLLocation *point in points) {
+            Stop *stop = [Stop alloc];
+            stop.position = point;
+            stop.name = [NSString stringWithFormat:@"Stop %d",c1];
+            [stops addObject:stop];
+            c1++;
+        }
+        route.stops = stops;
         [self.routes addObject:route];
     }
+    
+    
     
     self.routeFinder = [RouteFinder alloc];
     [self.routeFinder setSource:self.source];
     [self.routeFinder setDestination:self.destination];
     [self.routeFinder setAvailableRoutes:self.routes];
+    
+    NSMutableArray<Stop> *stops = [self.routeFinder getAvailableStops:[[CLLocation alloc] initWithLatitude:20.6955039 longitude:-103.4219898]];
+    
     
 }
 

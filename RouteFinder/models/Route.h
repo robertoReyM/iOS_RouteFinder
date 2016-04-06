@@ -13,11 +13,14 @@
 @interface Route : NSObject
 
 
-@property (nonatomic, assign) NSString * id;
-@property (nonatomic, assign) NSString * name;
-@property (nonatomic, assign) NSString * polyline;
+@property (nonatomic, strong) NSString * id;
+@property (nonatomic, strong) NSString * name;
+@property (nonatomic, strong) NSString * polyline;
 @property (nonatomic, strong) NSMutableArray<Stop> *stops;
 @property (nonatomic, strong) NSMutableArray *points;
 @property (nonatomic, strong) NSMutableDictionary *intersectedRoutes;
+@property (nonatomic, strong) NSString * route_type;
+@property (nonatomic, assign) float min_rate;
+@property (nonatomic, assign) float max_rate;
 
 @end

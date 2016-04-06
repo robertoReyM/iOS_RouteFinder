@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "Trajectory.h"
 #import "Instruction.h"
+#import "InstructionType.h"
 @protocol Result
 @end
 
@@ -20,5 +21,6 @@
 
 - (NSMutableArray<Instruction> *)generateInstructions;
 - (float)getDistance;
+- (float)getPrice;
 
 @end

@@ -15,6 +15,8 @@
 @interface Stop : NSObject
 
 
+@property (nonatomic, strong) NSString *route;
+@property (nonatomic, strong) NSString *type;
 @property (nonatomic, strong) NSString *name;
 @property (nonatomic, strong) CLLocation *position;
 @end
