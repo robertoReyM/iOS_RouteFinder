@@ -146,16 +146,34 @@
                 [path addCoordinate:location.coordinate];
             }
             
+            
             GMSPolyline *polyline = [GMSPolyline polylineWithPath:path];
+            GMSMarker *markerSource = [[GMSMarker alloc] init];
+            markerSource.position = trajectory.source.position.coordinate;
+            markerSource.title = trajectory.name;
+            markerSource.snippet = trajectory.source.name;
+            GMSMarker *markerDestination = [[GMSMarker alloc] init];
+            markerDestination.position = trajectory.destination.position.coordinate;
+            markerDestination.title = trajectory.name;
+            markerDestination.snippet = trajectory.destination.name;
+            
             [polyline setStrokeWidth:4];
             if([trajectory.type isEqualToString:nBUS]){
                 [polyline setStrokeColor:[UIColor colorWithRed:(51.0/255.0) green:(81.0/255.0) blue:(209.0/255.0) alpha:0.8]];
+                [markerSource setIcon:[UIImage imageNamed:@"ic_pin_1"]];
+                [markerDestination setIcon:[UIImage imageNamed:@"ic_pin_1"]];
             }else if([trajectory.type isEqualToString:nCOLECTOR]){
                 [polyline setStrokeColor:[UIColor colorWithRed:237.0/255.0 green:47.0/255.0 blue:75.0/255.0 alpha:0.8]];
+                [markerSource setIcon:[UIImage imageNamed:@"ic_pin_2"]];
+                [markerDestination setIcon:[UIImage imageNamed:@"ic_pin_2"]];
             }else if([trajectory.type isEqualToString:nTUZOBUS]){
                 [polyline setStrokeColor:[UIColor colorWithRed:168.0/255.0 green:214.0/255.0 blue:7.0/255.0 alpha:0.8]];
+                [markerSource setIcon:[UIImage imageNamed:@"ic_pin_3"]];
+                [markerDestination setIcon:[UIImage imageNamed:@"ic_pin_3"]];
             }
             polyline.map = mapView;
+            markerSource.map = mapView;
+            markerDestination.map = mapView;
         }
         
         

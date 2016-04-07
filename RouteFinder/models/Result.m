@@ -48,11 +48,11 @@
         
         Instruction * instruction2 = [Instruction alloc];
         if ([trajectory.type isEqualToString:nBUS]) {
-            [instruction2 setType:BUS_ON];
+            [instruction2 setType:BUS_OFF];
         }else if ([trajectory.type isEqualToString:nCOLECTOR]) {
-            [instruction2 setType:COLECTOR_ON];
+            [instruction2 setType:COLECTOR_OFF];
         }else if ([trajectory.type isEqualToString:nTUZOBUS]) {
-            [instruction2 setType:TUZOBUS_ON];
+            [instruction2 setType:TUZOBUS_OFF];
         }
         [instruction2 setAction:[NSString stringWithFormat:@"Baja de %@",trajectory.name]];
         [instruction2 setDetails:trajectory.destination.name];
