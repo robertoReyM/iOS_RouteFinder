@@ -18,5 +18,6 @@
 @property (nonatomic, strong) NSString *route;
 @property (nonatomic, strong) NSString *type;
 @property (nonatomic, strong) NSString *name;
-@property (nonatomic, strong) CLLocation *position;
+@property (nonatomic, assign) float lat;
+@property (nonatomic, assign) float lng;
 @end

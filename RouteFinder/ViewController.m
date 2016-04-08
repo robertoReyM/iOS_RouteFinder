@@ -81,7 +81,8 @@
         int c1 = 0;
         for (CLLocation *point in points) {
             Stop *stop = [Stop alloc];
-            stop.position = point;
+            stop.lat = point.coordinate.latitude;
+            stop.lng = point.coordinate.longitude;
             stop.name = [NSString stringWithFormat:@"Stop %d",c1];
             [stops addObject:stop];
             c1++;

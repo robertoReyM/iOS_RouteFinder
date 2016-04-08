@@ -53,7 +53,7 @@
             
             //get current point
             Stop *stop = [currentRoute.stops objectAtIndex:i2];
-            CLLocation *point = stop.position;
+            CLLocation *point = [[CLLocation alloc] initWithLatitude:stop.lat longitude:stop.lng];
             
             if(point!=nil){
                 //get distance to source
@@ -95,42 +95,51 @@
 /******************************************************************************************************/
 - (NSArray<Result> *)searchRoutes{
     
-    //get available routes for source and destination points
-    [self searchSourcePoint:self.source forDestinationPoint:self.destination];
-    
-    //check for common routes
-    NSMutableDictionary *results = [self checkFistLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
-    
-    if(results.count == 0){
+    if(self.routes!=nil){
         
-        //check for intersections between source an destination routes
-        results = [self checkSecondLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
-    }
-    
-    if(results.count == 0){
+        //get available routes for source and destination points
+        [self searchSourcePoint:self.source forDestinationPoint:self.destination];
         
-        //check for intersections for 3 routes result
-        results = [self checkThirdLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
-    }
-    if(results.count>0){
+        //check for common routes
+        NSMutableDictionary *results = [self checkFistLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
         
-        NSArray *sortedResults = [[results allValues] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2){
+        if(results.count == 0){
             
-            Result *r1 = (Result*)obj1;
-            Result *r2 = (Result*)obj2;
-            if ([r1 getDistance] > [r2 getDistance]) {
-                return (NSComparisonResult)NSOrderedDescending;
-            }
-            
-            if ([r2 getDistance] < [r2 getDistance]) {
-                return (NSComparisonResult)NSOrderedAscending;
-            }
-            return (NSComparisonResult)NSOrderedSame;
-        }];
+            //check for intersections between source an destination routes
+            results = [self checkSecondLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
+        }
         
-        return sortedResults;
+        if(results.count == 0){
+            
+            //check for intersections for 3 routes result
+            results = [self checkThirdLevelForSource:self.sourcePoint forDestination:self.destinationPoint];
+        }
+        if(results.count>0){
+            
+            NSArray *sortedResults = [[results allValues] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2){
+                
+                Result *r1 = (Result*)obj1;
+                Result *r2 = (Result*)obj2;
+                if ([r1 getDistance] > [r2 getDistance]) {
+                    return (NSComparisonResult)NSOrderedDescending;
+                }
+                
+                if ([r2 getDistance] < [r2 getDistance]) {
+                    return (NSComparisonResult)NSOrderedAscending;
+                }
+                return (NSComparisonResult)NSOrderedSame;
+            }];
+            
+            return (NSArray<Result> *)sortedResults;
+            
+        }else{
+            //no results found
+            return [[NSArray<Result> alloc] init];
+        }
+    
     }
     
+    //no data to search
     return nil;
 }
 
@@ -149,11 +158,11 @@
             
             GMSPolyline *polyline = [GMSPolyline polylineWithPath:path];
             GMSMarker *markerSource = [[GMSMarker alloc] init];
-            markerSource.position = trajectory.source.position.coordinate;
+            markerSource.position = CLLocationCoordinate2DMake(trajectory.source.lat, trajectory.source.lng);
             markerSource.title = trajectory.name;
             markerSource.snippet = trajectory.source.name;
             GMSMarker *markerDestination = [[GMSMarker alloc] init];
-            markerDestination.position = trajectory.destination.position.coordinate;
+            markerDestination.position = CLLocationCoordinate2DMake(trajectory.destination.lat, trajectory.destination.lng);
             markerDestination.title = trajectory.name;
             markerDestination.snippet = trajectory.destination.name;
             
@@ -208,7 +217,7 @@
             
             //get current point
             Stop *stop1 = [route.stops objectAtIndex:i2];
-            CLLocation * point1 = stop1.position;
+            CLLocation * point1 = [[CLLocation alloc] initWithLatitude:stop1.lat longitude:stop1.lng];
             
             if(point1!=nil){
                 
@@ -231,7 +240,7 @@
                             
                             //get current point
                             Stop *stop2 = [stops2 objectAtIndex:i4];
-                            CLLocation *point2 = stop2.position;
+                            CLLocation *point2 = [[CLLocation alloc] initWithLatitude:stop2.lat longitude:stop2.lng];
                             
                             if(point2!=nil){
                                 //get distance to source
@@ -309,7 +318,7 @@
             
             //get current point
             Stop *stop = [currentRoute.stops objectAtIndex:i2];
-            CLLocation *point = stop.position;
+            CLLocation *point = [[CLLocation alloc] initWithLatitude:stop.lat longitude:stop.lng];
             
             if (point!=nil) {
                 
@@ -393,14 +402,28 @@
     
     for(CLLocation *point in points){
         
-         if(point.coordinate.latitude == s1.position.coordinate.latitude &&
-            point.coordinate.longitude == s1.position.coordinate.longitude){
+        float lat1 = roundf(point.coordinate.latitude* 100000.0);
+        float lng1 = roundf(point.coordinate.longitude * 100000.0);
+        CLLocation *point1 =  [[CLLocation alloc] initWithLatitude:lat1/100000.0 longitude:lng1/100000.0];
+        
+        long latS1 = roundf(s1.lat * 100000.0);
+        long lngS1 = roundf(s1.lng * 100000.0);
+        CLLocation *stopS1 =  [[CLLocation alloc] initWithLatitude:latS1/100000.0 longitude:lngS1/100000.0];
+
+        
+        long latS2 = roundf(s2.lat * 100000.0);
+        long lngS2 = roundf(s2.lng * 100000.0);
+        CLLocation *stopS2 =  [[CLLocation alloc] initWithLatitude:latS2/100000.0 longitude:lngS2/100000.0];
+        
+        
+         if(point1.coordinate.latitude == stopS1.coordinate.latitude &&
+            point1.coordinate.longitude == stopS1.coordinate.longitude){
              
              isP1Found = true;
          }
         
-        if (point.coordinate.latitude == s2.position.coordinate.latitude &&
-            point.coordinate.longitude == s2.position.coordinate.longitude) {
+        if (point1.coordinate.latitude == stopS2.coordinate.latitude &&
+            point1.coordinate.longitude == stopS2.coordinate.longitude) {
             
             isP2Found = true;
         }
@@ -411,8 +434,8 @@
             if(isP2Found){
                 
                 //check for destination point
-                if (point.coordinate.latitude == s2.position.coordinate.latitude &&
-                    point.coordinate.longitude == s2.position.coordinate.longitude) {
+                if (point1.coordinate.latitude == stopS2.coordinate.latitude &&
+                    point1.coordinate.longitude == stopS2.coordinate.longitude) {
                     
                     if (previousPoint==nil) {
                         previousPoint = point;
@@ -424,7 +447,7 @@
                         
                     }
                     //get distance to source
-                    CLLocationDistance distance = [s1.position distanceFromLocation:point];
+                    CLLocationDistance distance = [stopS1 distanceFromLocation:point];
                     
                     //check if is close enough
                     if(distance<DEFAULT_INTERSECTION_TOLERANCE){
@@ -447,7 +470,7 @@
                 }
                 
                 //get distance to source
-                CLLocationDistance distance = [s1.position distanceFromLocation:point];
+                CLLocationDistance distance = [stopS1 distanceFromLocation:point];
                 
                 if(distance<DEFAULT_INTERSECTION_TOLERANCE){
                     totalDistance = 0;
